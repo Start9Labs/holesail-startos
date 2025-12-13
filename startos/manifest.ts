@@ -1,24 +1,23 @@
 import { setupManifest } from '@start9labs/start-sdk'
 
 export const manifest = setupManifest({
-  id: 'hello-world',
-  title: 'Hello World',
-  license: 'MIT',
-  wrapperRepo: 'https://github.com/Start9Labs/hello-world-startos',
-  upstreamRepo: 'https://github.com/Start9Labs/hello-world',
-  supportSite: 'https://docs.start9.com/',
-  marketingSite: 'https://start9.com/',
-  donationUrl: 'https://donate.start9.com/',
-  docsUrl:
-    'https://github.com/Start9Labs/hello-world-startos/blob/master/instructions.md',
+  id: 'holesail',
+  title: 'Holesail',
+  license: 'GPL-V3',
+  wrapperRepo: 'https://github.com/Start9Labs/holesail-startos/',
+  upstreamRepo: 'https://github.com/holesail/holesail-docker/',
+  supportSite: 'https://github.com/holesail/holesail-docker/issues/',
+  marketingSite: 'https://holesail.io/',
+  donationUrl: null,
+  docsUrl: 'https://github.com/holesail/holesail-docker/',
   description: {
-    short: 'Bare bones example of a StartOS service',
-    long: 'Hello World is a template service that provides examples of basic StartOS features.',
+    short: 'P2P Tunnels for instant access',
+    long: 'Create P2P tunnels instantly that bypass any network, firewall, NAT restrictions and expose local services over peer-to-peer tunnels. No Dynamic DNS required',
   },
-  volumes: ['main'],
+  volumes: ['holesail', 'startos'],
   images: {
-    'hello-world': {
-      source: { dockerTag: 'start9/hello-world' },
+    holesail: {
+      source: { dockerTag: 'holesail/holesail' },
     },
   },
   alerts: {
