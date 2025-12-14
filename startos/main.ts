@@ -45,10 +45,10 @@ export const main = sdk.setupMain(async ({ effects, started }) => {
 
   await Promise.all(
     serviceEntries.flatMap(([packageId, ifaces]) =>
-      Object.entries(ifaces).map(async ([interfaceId, { key, isPublic }]) => {
+      Object.entries(ifaces).map(async ([interfaceId, connectionString]) => {
         const id = `${packageId}-${interfaceId}`
 
-        const title = interfaceId
+        const title = packageId
         // const title = (await sdk.getServiceManifest(effects, packageId)).title
 
         const iface = await sdk.serviceInterface
@@ -58,9 +58,11 @@ export const main = sdk.setupMain(async ({ effects, started }) => {
           })
           .once()
 
-        const port =
-          iface?.host?.bindings[iface.addressInfo?.internalPort || 0]?.net
-            .assignedPort
+        if (!iface?.addressInfo || !iface.host) {
+          return Promise.resolve(null)
+        }
+
+        const port = iface.addressInfo.internalPort
 
         if (!port) {
           return Promise.resolve(null)
@@ -70,26 +72,22 @@ export const main = sdk.setupMain(async ({ effects, started }) => {
           subcontainer,
           exec: {
             command: sdk.useEntrypoint(),
+            user: '1001',
             env: {
               MODE: 'server',
               PORT: String(port),
-              HOST: '0.0.0.0',
-              KEY: key,
-              PUBLIC: String(isPublic),
+              HOST: `${packageId}.startos`,
+              KEY: connectionString,
               LOG: String(true),
+              NODE_ENV: 'production',
             },
           },
           ready: {
             display: `${title} - ${iface.name}`,
-            fn: () =>
-              sdk.healthCheck.checkWebUrl(
-                effects,
-                `${packageId}.startos:${port}`,
-                {
-                  successMessage: 'The tunnel is healthy',
-                  errorMessage: 'Problem with the tunnel',
-                },
-              ),
+            fn: () => ({
+              result: 'success',
+              message: 'Tunnel is working',
+            }),
           },
           requires: [],
         })

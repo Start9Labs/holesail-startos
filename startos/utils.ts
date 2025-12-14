@@ -1,8 +1,10 @@
 import { utils } from '@start9labs/start-sdk'
 
-export function getRandomKey() {
-  return utils.getDefaultString({
+export function getRandomConnectionString(isPublic: boolean) {
+  const key = utils.getDefaultString({
     charset: 'a-z,A-Z,0-9',
-    len: 32,
+    len: 42,
   })
+
+  return `hs://${isPublic ? '0' : 's'}000${key}`
 }

@@ -1,6 +1,6 @@
 import { shape, storeJson } from '../fileModels/store.json'
 import { sdk } from '../sdk'
-import { getRandomKey } from '../utils'
+import { getRandomConnectionString } from '../utils'
 
 const { InputSpec, Value, List, Variants } = sdk
 
@@ -9,8 +9,8 @@ export const inputSpec = InputSpec.of({
     List.obj(
       { name: 'Tunnels' },
       {
-        displayAs: '{{service}} - {{service.iface}}',
-        uniqueBy: { all: ['service', 'service.iface'] },
+        displayAs: '{{service.selection}} {{service.value.iface}}',
+        uniqueBy: { all: ['service.selection', 'service.value.iface'] },
         spec: InputSpec.of({
           service: Value.dynamicUnion(async ({ effects }) => {
             const packages = await sdk.getInstalledPackages(effects)
@@ -54,7 +54,7 @@ export const inputSpec = InputSpec.of({
 
             return {
               name: 'Service',
-              default: 'test',
+              default: '',
               disabled: false,
               variants: Variants.of(Object.fromEntries(entries)),
             }
@@ -88,10 +88,13 @@ export const manageTunnels = sdk.Action.withInput(
 
     return {
       tunnels: Object.entries(store).flatMap(([packageId, ifaces]) =>
-        Object.entries(ifaces).map(([interfaceId, val]) => ({
+        Object.entries(ifaces).map(([interfaceId, connectionString]) => ({
           service: {
             selection: packageId,
-            value: { iface: interfaceId, isPublic: val.isPublic },
+            value: {
+              iface: interfaceId,
+              isPublic: connectionString.charAt(5) === '0',
+            },
           },
         })),
       ),
@@ -114,10 +117,9 @@ export const manageTunnels = sdk.Action.withInput(
       }
 
       const iface: (typeof shape._TYPE)[''] = {
-        [value.iface]: {
-          isPublic: value.isPublic,
-          key: store[selection]?.[value.iface]?.key || getRandomKey(),
-        },
+        [value.iface]:
+          store[selection]?.[value.iface] ||
+          getRandomConnectionString(value.isPublic),
       }
 
       if (!toSave[selection]) {
