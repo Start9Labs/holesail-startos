@@ -3,7 +3,7 @@ import { manifest } from './manifest'
 import { storeJson } from './fileModels/store.json'
 import { sdk } from './sdk'
 
-export const main = sdk.setupMain(async ({ effects, started }) => {
+export const main = sdk.setupMain(async ({ effects }) => {
   /**
    * ======================== Setup (optional) ========================
    *
@@ -38,61 +38,72 @@ export const main = sdk.setupMain(async ({ effects, started }) => {
     'holesail-sub',
   )
 
-  let daemons: Daemons<typeof manifest, string> = sdk.Daemons.of(
-    effects,
-    started,
-  )
+  let daemons: Daemons<typeof manifest, string> = sdk.Daemons.of(effects)
 
   await Promise.all(
-    serviceEntries.flatMap(([packageId, ifaces]) =>
-      Object.entries(ifaces).map(async ([interfaceId, connectionString]) => {
-        const id = `${packageId}-${interfaceId}`
+    serviceEntries.flatMap(([packageId, ifaces]) => {
+      let packageTitle = 'StartOS'
 
-        const title = packageId
-        // const title = (await sdk.getServiceManifest(effects, packageId)).title
+      if (packageId !== 'startos') {
+        packageTitle = packageId
+        // packageTitle = (await sdk.getServiceManifest(effects, packageId)).title
+      }
 
-        const iface = await sdk.serviceInterface
-          .get(effects, {
-            id: interfaceId,
-            packageId,
-          })
-          .once()
+      return Object.entries(ifaces).map(
+        async ([interfaceId, connectionString]) => {
+          const id = `${packageId}-${interfaceId}`
 
-        if (!iface?.addressInfo || !iface.host) {
-          return Promise.resolve(null)
-        }
+          let interfaceName = 'UI'
+          let HOST = 'startos'
+          let PORT: string | undefined
 
-        const port = iface.addressInfo.internalPort
+          if (packageId === 'startos') {
+            PORT = '80'
+          } else {
+            HOST = `${packageId}.${HOST}`
 
-        if (!port) {
-          return Promise.resolve(null)
-        }
+            const iface = await sdk.serviceInterface
+              .get(effects, {
+                id: interfaceId,
+                packageId,
+              })
+              .once()
 
-        daemons = daemons.addDaemon(id as never, {
-          subcontainer,
-          exec: {
-            command: sdk.useEntrypoint(),
-            user: '1001',
-            env: {
-              MODE: 'server',
-              PORT: String(port),
-              HOST: `${packageId}.startos`,
-              KEY: connectionString,
-              LOG: String(true),
-              NODE_ENV: 'production',
+            if (iface?.addressInfo) {
+              interfaceName = iface.name
+              PORT = String(iface.addressInfo.internalPort)
+            }
+          }
+
+          if (!PORT) {
+            return Promise.resolve(null)
+          }
+
+          daemons = daemons.addDaemon(id as never, {
+            subcontainer,
+            exec: {
+              command: sdk.useEntrypoint(),
+              env: {
+                MODE: 'server',
+                PORT,
+                HOST,
+                KEY: connectionString,
+                LOG: 'true',
+                NODE_ENV: 'production',
+              },
             },
-          },
-          ready: {
-            display: `${title} - ${iface.name}`,
-            fn: () => ({
-              result: 'success',
-              message: 'Tunnel is working',
-            }),
-          },
-          requires: [],
-        })
-      }),
-    ),
+            ready: {
+              display: `${packageTitle} - ${interfaceName}`,
+              fn: () => ({
+                result: 'success',
+                message: 'Tunnel is working',
+              }),
+            },
+            requires: [],
+          })
+        },
+      )
+    }),
   )
 
   return daemons

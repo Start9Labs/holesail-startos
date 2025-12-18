@@ -17,7 +17,6 @@ export const manifest = setupManifest({
   volumes: ['holesail', 'startos'],
   images: {
     holesail: {
-      // source: { dockerBuild: {} },
       source: { dockerTag: 'holesail/holesail:latest' },
     },
   },

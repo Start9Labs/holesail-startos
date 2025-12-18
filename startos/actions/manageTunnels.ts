@@ -1,3 +1,4 @@
+import { ServiceInterfaceFilled } from '@start9labs/start-sdk/base/lib/util/getServiceInterface'
 import { shape, storeJson } from '../fileModels/store.json'
 import { sdk } from '../sdk'
 import { getRandomConnectionString } from '../utils'
@@ -15,13 +16,7 @@ export const inputSpec = InputSpec.of({
           service: Value.dynamicUnion(async ({ effects }) => {
             const packages = await sdk.getInstalledPackages(effects)
 
-            const entries: [
-              string,
-              {
-                name: any
-                spec: ReturnType<typeof InputSpec.of>
-              },
-            ][] = await Promise.all(
+            const entries = await Promise.all(
               packages.map(async (packageId) => {
                 const title = packageId
                 // const title = (await sdk.getServiceManifest(effects, packageId)).title
@@ -30,25 +25,7 @@ export const inputSpec = InputSpec.of({
                   .getAll(effects, { packageId })
                   .once()
 
-                return [
-                  packageId,
-                  {
-                    name: title,
-                    spec: InputSpec.of({
-                      iface: Value.select({
-                        name: 'Service Interface',
-                        default: '',
-                        values: Object.fromEntries(
-                          iFaces.map((i) => [i.id, i.name]),
-                        ),
-                      }),
-                      isPublic: Value.toggle({
-                        name: 'Public',
-                        default: false,
-                      }),
-                    }),
-                  },
-                ]
+                return getSpec(packageId, title, iFaces)
               }),
             )
 
@@ -56,7 +33,15 @@ export const inputSpec = InputSpec.of({
               name: 'Service',
               default: '',
               disabled: false,
-              variants: Variants.of(Object.fromEntries(entries)),
+              variants: Variants.of(
+                Object.fromEntries(
+                  [
+                    getSpec('startos', 'StartOS', [
+                      { id: 'ui', name: 'UI' } as ServiceInterfaceFilled,
+                    ]),
+                  ].concat(entries),
+                ),
+              ),
             }
           }),
         }),
@@ -135,3 +120,30 @@ export const manageTunnels = sdk.Action.withInput(
     await storeJson.write(effects, toSave)
   },
 )
+
+function getSpec(
+  packageId: string,
+  packageTitle: string,
+  iFaces: ServiceInterfaceFilled[],
+) {
+  console.log('PACKAGE', packageId)
+  console.log('TITLE', packageTitle)
+  console.log('IFACES', iFaces)
+  return [
+    packageId,
+    {
+      name: packageTitle,
+      spec: InputSpec.of({
+        iface: Value.select({
+          name: 'Service Interface',
+          default: '',
+          values: Object.fromEntries(iFaces.map((i) => [i.id, i.name])),
+        }),
+        isPublic: Value.toggle({
+          name: 'Public',
+          default: false,
+        }),
+      }),
+    },
+  ] as const
+}

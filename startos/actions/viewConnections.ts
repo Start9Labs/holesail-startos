@@ -31,16 +31,22 @@ export const viewConnections = sdk.Action.withoutInput(
           return Promise.all(
             Object.entries(ifaces).map(
               async ([interfaceId, connectionString]) => {
-                const iface = await sdk.serviceInterface
-                  .get(effects, {
-                    id: interfaceId,
-                    packageId,
-                  })
-                  .once()
+                let name = 'StartOS - UI'
+
+                if (packageId !== 'startos') {
+                  const iface = await sdk.serviceInterface
+                    .get(effects, {
+                      id: interfaceId,
+                      packageId,
+                    })
+                    .once()
+
+                  name = `${title} - ${iface?.name}`
+                }
 
                 return {
                   type: 'single',
-                  name: `${title} - ${iface?.name}`,
+                  name,
                   description: null,
                   value: connectionString,
                   masked: true,
@@ -63,22 +69,32 @@ export const viewConnections = sdk.Action.withoutInput(
         value: (
           await Promise.all(
             Object.entries(store).flatMap(async ([packageId, ifaces]) => {
-              const title = packageId
-              // const title = (await sdk.getServiceManifest(effects, packageId)).title
+              let packageTitle = 'StartOS'
+
+              if (packageId !== 'startos') {
+                packageTitle = packageId
+                // title = (await sdk.getServiceManifest(effects, packageId)).title
+              }
 
               return Promise.all(
                 Object.entries(ifaces).map(
                   async ([interfaceId, connectionString]) => {
-                    const iface = await sdk.serviceInterface
-                      .get(effects, {
-                        id: interfaceId,
-                        packageId,
-                      })
-                      .once()
+                    let ifaceName = 'UI'
+
+                    if (packageId !== 'startos') {
+                      const iface = await sdk.serviceInterface
+                        .get(effects, {
+                          id: interfaceId,
+                          packageId,
+                        })
+                        .once()
+
+                      ifaceName = iface?.name || 'unknown'
+                    }
 
                     return {
                       type: 'single' as const,
-                      name: `${title} - ${iface?.name}`,
+                      name: `${packageTitle} - ${ifaceName}`,
                       description: null,
                       value: connectionString,
                       masked: true,
