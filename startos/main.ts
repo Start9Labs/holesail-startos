@@ -41,16 +41,18 @@ export const main = sdk.setupMain(async ({ effects }) => {
   let daemons: Daemons<typeof manifest, string> = sdk.Daemons.of(effects)
 
   await Promise.all(
-    serviceEntries.flatMap(([packageId, ifaces]) => {
+    serviceEntries.map(async ([packageId, ifaces]) => {
       let packageTitle = 'StartOS'
 
       if (packageId !== 'startos') {
-        packageTitle = packageId
-        // packageTitle = (await sdk.getServiceManifest(effects, packageId)).title
+        packageTitle =
+          (await sdk
+            .getServiceManifest(effects, packageId, (m) => m?.title)
+            .const()) ?? packageId
       }
 
-      return Object.entries(ifaces).map(
-        async ([interfaceId, connectionString]) => {
+      await Promise.all(
+        Object.entries(ifaces).map(async ([interfaceId, connectionString]) => {
           const id = `${packageId}-${interfaceId}`
 
           let interfaceName = 'UI'
@@ -101,7 +103,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
             },
             requires: [],
           })
-        },
+        }),
       )
     }),
   )

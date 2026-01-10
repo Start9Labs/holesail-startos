@@ -25,8 +25,9 @@ export const viewConnections = sdk.Action.withoutInput(
     const val = (
       await Promise.all(
         Object.entries(store).map(async ([packageId, ifaces]) => {
-          const title = packageId
-          // const title = (await sdk.getServiceManifest(effects, packageId)).title
+          const title = await sdk
+            .getServiceManifest(effects, packageId, (m) => m?.title)
+            .const()
 
           return Promise.all(
             Object.entries(ifaces).map(
@@ -72,8 +73,10 @@ export const viewConnections = sdk.Action.withoutInput(
               let packageTitle = 'StartOS'
 
               if (packageId !== 'startos') {
-                packageTitle = packageId
-                // title = (await sdk.getServiceManifest(effects, packageId)).title
+                packageTitle =
+                  (await sdk
+                    .getServiceManifest(effects, packageId, (m) => m?.title)
+                    .const()) ?? packageId
               }
 
               return Promise.all(

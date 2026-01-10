@@ -18,8 +18,10 @@ export const inputSpec = InputSpec.of({
 
             const entries = await Promise.all(
               packages.map(async (packageId) => {
-                const title = packageId
-                // const title = (await sdk.getServiceManifest(effects, packageId)).title
+                const title =
+                  (await sdk
+                    .getServiceManifest(effects, packageId, (m) => m?.title)
+                    .const()) ?? packageId
 
                 const iFaces = await sdk.serviceInterface
                   .getAll(effects, { packageId })
