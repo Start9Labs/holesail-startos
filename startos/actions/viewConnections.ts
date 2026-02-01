@@ -1,4 +1,5 @@
 import { storeJson } from '../fileModels/store.json'
+import { i18n } from '../i18n'
 import { sdk } from '../sdk'
 
 export const viewConnections = sdk.Action.withoutInput(
@@ -7,15 +8,15 @@ export const viewConnections = sdk.Action.withoutInput(
 
   // metadata
   async ({ effects }) => ({
-    name: 'View Connections',
-    description: 'View the connection URLs for your tunnels',
+    name: i18n('View Connections'),
+    description: i18n('View the connection URLs for your tunnels'),
     warning: null,
     allowedStatuses: 'any',
     group: null,
     visibility: Object.keys((await storeJson.read().const(effects)) || {})
       .length
       ? 'enabled'
-      : { disabled: 'You have no tunnels' },
+      : { disabled: i18n('You have no tunnels') },
   }),
 
   // execution function
@@ -35,14 +36,12 @@ export const viewConnections = sdk.Action.withoutInput(
                 let name = 'StartOS - UI'
 
                 if (packageId !== 'startos') {
-                  const iface = await sdk.serviceInterface
+                  const name = await sdk.serviceInterface
                     .get(effects, {
                       id: interfaceId,
                       packageId,
-                    })
+                    }, (i) => `${title} - ${i?.name}`)
                     .once()
-
-                  name = `${title} - ${iface?.name}`
                 }
 
                 return {
@@ -63,7 +62,7 @@ export const viewConnections = sdk.Action.withoutInput(
 
     return {
       version: '1',
-      title: 'Connections',
+      title: i18n('Connections'),
       message: null,
       result: {
         type: 'group',
@@ -85,14 +84,12 @@ export const viewConnections = sdk.Action.withoutInput(
                     let ifaceName = 'UI'
 
                     if (packageId !== 'startos') {
-                      const iface = await sdk.serviceInterface
+                      ifaceName = await sdk.serviceInterface
                         .get(effects, {
                           id: interfaceId,
                           packageId,
-                        })
+                        }, (i) => i?.name || 'unknown')
                         .once()
-
-                      ifaceName = iface?.name || 'unknown'
                     }
 
                     return {

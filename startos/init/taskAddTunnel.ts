@@ -1,5 +1,6 @@
 import { manageTunnels } from '../actions/manageTunnels'
 import { storeJson } from '../fileModels/store.json'
+import { i18n } from '../i18n'
 import { sdk } from '../sdk'
 
 export const taskAddTunnel = sdk.setupOnInit(async (effects, _) => {
@@ -7,7 +8,7 @@ export const taskAddTunnel = sdk.setupOnInit(async (effects, _) => {
 
   if (!Object.keys(store || {}).length) {
     await sdk.action.createOwnTask(effects, manageTunnels, 'critical', {
-      reason: 'Create your first tunnel',
+      reason: i18n('Create your first tunnel'),
     })
   }
 })

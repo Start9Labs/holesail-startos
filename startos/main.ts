@@ -1,4 +1,5 @@
 import { Daemons } from '@start9labs/start-sdk'
+import { i18n } from './i18n'
 import { manifest } from './manifest'
 import { storeJson } from './fileModels/store.json'
 import { sdk } from './sdk'

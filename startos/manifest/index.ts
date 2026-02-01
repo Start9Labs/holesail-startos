@@ -1,4 +1,5 @@
 import { setupManifest } from '@start9labs/start-sdk'
+import i18n from './i18n'
 
 export const manifest = setupManifest({
   id: 'holesail',
@@ -10,23 +11,13 @@ export const manifest = setupManifest({
   marketingSite: 'https://holesail.io/',
   donationUrl: null,
   docsUrl: 'https://github.com/holesail/holesail-docker/',
-  description: {
-    short: 'P2P Tunnels for instant access',
-    long: 'Create P2P tunnels instantly that bypass any network, firewall, NAT restrictions and expose local services over peer-to-peer tunnels. No Dynamic DNS required',
-  },
+  description: i18n.description,
   volumes: ['holesail', 'startos'],
   images: {
     holesail: {
-      source: { dockerTag: 'holesail/holesail:latest' },
+      source: { dockerTag: 'holesail/holesail:2.4.1' },
+      arch: ['x86_64', 'aarch64'],
     },
-  },
-  alerts: {
-    install: null,
-    update: null,
-    uninstall: null,
-    restore: null,
-    start: null,
-    stop: null,
   },
   dependencies: {},
 })

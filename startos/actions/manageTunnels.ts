@@ -1,5 +1,5 @@
-import { ServiceInterfaceFilled } from '@start9labs/start-sdk/base/lib/util/getServiceInterface'
 import { shape, storeJson } from '../fileModels/store.json'
+import { i18n } from '../i18n'
 import { sdk } from '../sdk'
 import { getRandomConnectionString } from '../utils'
 
@@ -8,7 +8,7 @@ const { InputSpec, Value, List, Variants } = sdk
 export const inputSpec = InputSpec.of({
   tunnels: Value.list(
     List.obj(
-      { name: 'Tunnels' },
+      { name: i18n('Tunnels') },
       {
         displayAs: '{{service.selection}} {{service.value.iface}}',
         uniqueBy: { all: ['service.selection', 'service.value.iface'] },
@@ -24,7 +24,7 @@ export const inputSpec = InputSpec.of({
                     .const()) ?? packageId
 
                 const iFaces = await sdk.serviceInterface
-                  .getAll(effects, { packageId })
+                  .getAll(effects, { packageId }, (ifaces) => ifaces.map(i => [i.id, i.name]))
                   .once()
 
                 return getSpec(packageId, title, iFaces)
@@ -32,15 +32,13 @@ export const inputSpec = InputSpec.of({
             )
 
             return {
-              name: 'Service',
+              name: i18n('Service'),
               default: '',
               disabled: false,
               variants: Variants.of(
                 Object.fromEntries(
                   [
-                    getSpec('startos', 'StartOS', [
-                      { id: 'ui', name: 'UI' } as ServiceInterfaceFilled,
-                    ]),
+                    getSpec('startos', 'StartOS', [['ui', 'UI']]),
                   ].concat(entries),
                 ),
               ),
@@ -58,8 +56,8 @@ export const manageTunnels = sdk.Action.withInput(
 
   // metadata
   async ({ effects }) => ({
-    name: 'Manage Tunnels',
-    description: 'Add and remove Holesail tunnels',
+    name: i18n('Manage Tunnels'),
+    description: i18n('Add and remove Holesail tunnels'),
     warning: null,
     allowedStatuses: 'any',
     group: null,
@@ -126,23 +124,20 @@ export const manageTunnels = sdk.Action.withInput(
 function getSpec(
   packageId: string,
   packageTitle: string,
-  iFaces: ServiceInterfaceFilled[],
+  iFaces: string[][],
 ) {
-  console.log('PACKAGE', packageId)
-  console.log('TITLE', packageTitle)
-  console.log('IFACES', iFaces)
   return [
     packageId,
     {
       name: packageTitle,
       spec: InputSpec.of({
         iface: Value.select({
-          name: 'Service Interface',
+          name: i18n('Service Interface'),
           default: '',
-          values: Object.fromEntries(iFaces.map((i) => [i.id, i.name])),
+          values: Object.fromEntries(iFaces),
         }),
         isPublic: Value.toggle({
-          name: 'Public',
+          name: i18n('Public'),
           default: false,
         }),
       }),
