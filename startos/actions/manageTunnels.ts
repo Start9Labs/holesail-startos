@@ -1,3 +1,4 @@
+import { z } from '@start9labs/start-sdk'
 import { shape, storeJson } from '../fileModels/store.json'
 import { i18n } from '../i18n'
 import { sdk } from '../sdk'
@@ -90,7 +91,7 @@ export const manageTunnels = sdk.Action.withInput(
   async ({ effects, input }) => {
     const store = (await storeJson.read().once()) || {}
 
-    const toSave: typeof shape._TYPE = {}
+    const toSave: z.infer<typeof shape> = {}
 
     input.tunnels.forEach((tunnel) => {
       const { selection, value } = tunnel.service as {
@@ -101,7 +102,7 @@ export const manageTunnels = sdk.Action.withInput(
         }
       }
 
-      const iface: (typeof shape._TYPE)[''] = {
+      const iface: (z.infer<typeof shape>)[''] = {
         [value.iface]:
           store[selection]?.[value.iface] ||
           getRandomConnectionString(value.isPublic),
