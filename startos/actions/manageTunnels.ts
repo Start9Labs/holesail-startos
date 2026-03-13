@@ -17,20 +17,26 @@ export const inputSpec = InputSpec.of({
           service: Value.dynamicUnion(async ({ effects }) => {
             const packages = await sdk.getInstalledPackages(effects)
 
-            const entries = await Promise.all(
-              packages.map(async (packageId) => {
-                const title =
-                  (await sdk
-                    .getServiceManifest(effects, packageId, (m) => m?.title)
-                    .const()) ?? packageId
+            const entries = (
+              await Promise.all(
+                packages.map(async (packageId) => {
+                  const title =
+                    (await sdk
+                      .getServiceManifest(effects, packageId, (m) => m?.title)
+                      .const()) ?? packageId
 
-                const iFaces = await sdk.serviceInterface
-                  .getAll(effects, { packageId }, (ifaces) => ifaces.map(i => [i.id, i.name]))
-                  .once()
+                  const iFaces = await sdk.serviceInterface
+                    .getAll(effects, { packageId }, (ifaces) =>
+                      ifaces.map((i) => [i.id, i.name]),
+                    )
+                    .once()
 
-                return getSpec(packageId, title, iFaces)
-              }),
-            )
+                  if (!iFaces.length) return null
+
+                  return getSpec(packageId, title, iFaces)
+                }),
+              )
+            ).filter((e): e is NonNullable<typeof e> => e !== null)
 
             return {
               name: i18n('Service'),
@@ -38,9 +44,9 @@ export const inputSpec = InputSpec.of({
               disabled: false,
               variants: Variants.of(
                 Object.fromEntries(
-                  [
-                    getSpec('startos', 'StartOS', [['ui', 'UI']]),
-                  ].concat(entries),
+                  [getSpec('startos', 'StartOS', [['ui', 'UI']])].concat(
+                    entries,
+                  ),
                 ),
               ),
             }
@@ -102,7 +108,7 @@ export const manageTunnels = sdk.Action.withInput(
         }
       }
 
-      const iface: (z.infer<typeof shape>)[''] = {
+      const iface: z.infer<typeof shape>[''] = {
         [value.iface]:
           store[selection]?.[value.iface] ||
           getRandomConnectionString(value.isPublic),
@@ -122,11 +128,7 @@ export const manageTunnels = sdk.Action.withInput(
   },
 )
 
-function getSpec(
-  packageId: string,
-  packageTitle: string,
-  iFaces: string[][],
-) {
+function getSpec(packageId: string, packageTitle: string, iFaces: string[][]) {
   return [
     packageId,
     {
