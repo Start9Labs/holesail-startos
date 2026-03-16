@@ -23,43 +23,6 @@ export const viewConnections = sdk.Action.withoutInput(
   async ({ effects }) => {
     const store = (await storeJson.read().once()) || {}
 
-    const val = (
-      await Promise.all(
-        Object.entries(store).map(async ([packageId, ifaces]) => {
-          const title = await sdk
-            .getServiceManifest(effects, packageId, (m) => m?.title)
-            .const()
-
-          return Promise.all(
-            Object.entries(ifaces).map(
-              async ([interfaceId, connectionString]) => {
-                let name = 'StartOS - UI'
-
-                if (packageId !== 'startos') {
-                  const name = await sdk.serviceInterface
-                    .get(effects, {
-                      id: interfaceId,
-                      packageId,
-                    }, (i) => `${title} - ${i?.name}`)
-                    .once()
-                }
-
-                return {
-                  type: 'single',
-                  name,
-                  description: null,
-                  value: connectionString,
-                  masked: true,
-                  copyable: true,
-                  qr: true,
-                }
-              },
-            ),
-          )
-        }),
-      )
-    ).flat()
-
     return {
       version: '1',
       title: i18n('Connections'),
