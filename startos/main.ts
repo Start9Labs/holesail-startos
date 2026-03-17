@@ -1,7 +1,7 @@
 import { Daemons } from '@start9labs/start-sdk'
-import { i18n } from './i18n'
-import { manifest } from './manifest'
 import { storeJson } from './fileModels/store.json'
+import { manifest } from './manifest'
+import { i18n } from './i18n'
 import { sdk } from './sdk'
 
 export const main = sdk.setupMain(async ({ effects }) => {
@@ -99,7 +99,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
               display: `${packageTitle} - ${interfaceName}`,
               fn: () => ({
                 result: 'success',
-                message: 'Tunnel is working',
+                message: i18n('Tunnel is working'),
               }),
             },
             requires: [],
