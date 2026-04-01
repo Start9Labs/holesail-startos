@@ -5,7 +5,7 @@ export const manifest = setupManifest({
   id: 'holesail',
   title: 'Holesail',
   license: 'GPL-V3',
-  packageRepo: 'https://github.com/Start9Labs/holesail-startos/tree/update/040',
+  packageRepo: 'https://github.com/Start9Labs/holesail-startos',
   upstreamRepo: 'https://github.com/holesail/holesail-docker/',
   marketingUrl: 'https://holesail.io/',
   donationUrl: null,
