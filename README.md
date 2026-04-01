@@ -18,11 +18,13 @@
 
 - [Image and Container Runtime](#image-and-container-runtime)
 - [Volume and Data Layout](#volume-and-data-layout)
-- [How It Works on StartOS](#how-it-works-on-startos)
+- [Installation and First-Run Flow](#installation-and-first-run-flow)
+- [Configuration Management](#configuration-management)
+- [Network Access and Interfaces](#network-access-and-interfaces)
 - [Actions (StartOS UI)](#actions-startos-ui)
-- [Dependencies](#dependencies)
 - [Backups and Restore](#backups-and-restore)
 - [Health Checks](#health-checks)
+- [Dependencies](#dependencies)
 - [Limitations and Differences](#limitations-and-differences)
 - [What Is Unchanged from Upstream](#what-is-unchanged-from-upstream)
 - [Contributing](#contributing)
@@ -32,37 +34,54 @@
 
 ## Image and Container Runtime
 
-| Property | Value |
-|----------|-------|
-| Image | `holesail/holesail:latest` (upstream unmodified) |
-| Architectures | x86_64, aarch64 |
-| Runtime | Multiple daemons (one per configured tunnel) |
+| Property      | Value                           |
+| ------------- | ------------------------------- |
+| Image         | `holesail/holesail` (upstream)  |
+| Architectures | x86_64, aarch64                 |
+| Runtime       | Multiple daemons (one per tunnel) |
+
+Each configured tunnel runs as a separate daemon instance sharing the same container image.
 
 ---
 
 ## Volume and Data Layout
 
-| Volume | Mount Point | Purpose |
-|--------|-------------|---------|
-| `holesail` | `/usr/src/app/data` | Holesail data directory |
-| `startos` | — | StartOS-managed state (`store.json`) |
+| Volume     | Mount Point          | Purpose                           |
+| ---------- | -------------------- | --------------------------------- |
+| `holesail` | `/usr/src/app/data`  | Holesail data directory           |
+| `startos`  | —                    | StartOS-managed state (`store.json`) |
 
 **StartOS-specific files:**
 
-- `store.json` — tunnel configurations (service → interface → connection string)
+- `store.json` — tunnel configurations mapping services and interfaces to connection strings
 
 ---
 
-## How It Works on StartOS
+## Installation and First-Run Flow
 
 Holesail on StartOS operates in **server mode only**, creating P2P tunnels to expose your StartOS services to remote clients.
-
-### Setup Flow
 
 1. Install Holesail
 2. Run "Manage Tunnels" action to select which services to expose
 3. Run "View Connections" action to get connection strings
 4. Share connection strings with clients who need access
+
+---
+
+## Configuration Management
+
+All configuration is managed through StartOS actions — there are no user-editable config files.
+
+**Per-tunnel environment variables (set automatically):**
+
+| Variable   | Value |
+| ---------- | ----- |
+| `MODE`     | `server` |
+| `PORT`     | Internal port of the tunneled service interface |
+| `HOST`     | `{packageId}.startos` (or `startos` for StartOS UI) |
+| `KEY`      | Connection string |
+| `LOG`      | `true` |
+| `NODE_ENV` | `production` |
 
 ### Connection Strings
 
@@ -75,11 +94,11 @@ hs://{visibility}000{42-character-key}
 - `hs://0000...` — Public tunnel (discoverable)
 - `hs://s000...` — Private tunnel (requires the exact key)
 
-Clients use these strings with Holesail client apps to connect directly to your services.
+---
 
-### Dynamic Daemons
+## Network Access and Interfaces
 
-Each tunnel runs as a separate daemon. When you add or remove tunnels via the action, the service restarts with the updated configuration.
+Holesail exposes no network ports on StartOS. It uses Hyperswarm DHT for peer discovery and creates direct peer-to-peer connections. Clients connect using Holesail client apps with connection strings obtained from the "View Connections" action.
 
 ---
 
@@ -87,13 +106,12 @@ Each tunnel runs as a separate daemon. When you add or remove tunnels via the ac
 
 ### Manage Tunnels
 
-| Property | Value |
-|----------|-------|
-| ID | `manage-tunnels` |
-| Name | Manage Tunnels |
-| Visibility | Enabled |
+| Property     | Value |
+|--------------|-------|
+| ID           | `manage-tunnels` |
+| Visibility   | Enabled |
 | Availability | Any status |
-| Purpose | Add and remove P2P tunnels |
+| Purpose      | Add and remove P2P tunnels |
 
 **How it works:**
 
@@ -102,33 +120,16 @@ Each tunnel runs as a separate daemon. When you add or remove tunnels via the ac
 3. Choose public or private visibility
 4. Save to create/update tunnels
 
-**Features:**
-
-- Tunnel any installed service's interfaces
-- Tunnel the StartOS UI itself
-- Mix of public and private tunnels supported
-
 ### View Connections
 
-| Property | Value |
-|----------|-------|
-| ID | `view-connections` |
-| Name | View Connections |
-| Visibility | Enabled (if tunnels exist) / Disabled otherwise |
+| Property     | Value |
+|--------------|-------|
+| ID           | `view-connections` |
+| Visibility   | Enabled (if tunnels exist) / Disabled otherwise |
 | Availability | Any status |
-| Purpose | Display connection strings for sharing |
+| Purpose      | Display connection strings for sharing |
 
-**Output:** Lists all configured tunnels with:
-
-- Service and interface name
-- Connection string (masked, copyable)
-- QR code for easy sharing
-
----
-
-## Dependencies
-
-None. Holesail is a standalone tunneling service.
+**Output:** Lists all configured tunnels with service/interface name, connection string (masked, copyable), and QR code.
 
 ---
 
@@ -148,11 +149,17 @@ None. Holesail is a standalone tunneling service.
 
 ## Health Checks
 
-| Check | Display Name | Method |
-|-------|--------------|--------|
-| Per-tunnel | `{Service} - {Interface}` | Always succeeds when daemon starts |
+| Check      | Display Name                    | Method                              |
+| ---------- | ------------------------------- | ----------------------------------- |
+| Per-tunnel | `{Service Title} - {Interface}` | Always succeeds when daemon starts |
 
-Each configured tunnel has its own health check displayed in the StartOS UI.
+Each configured tunnel has its own health check displayed in the StartOS UI with the message "Tunnel is working".
+
+---
+
+## Dependencies
+
+None. Holesail is a standalone tunneling service.
 
 ---
 
@@ -189,35 +196,21 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for build instructions and development wo
 
 ```yaml
 package_id: holesail
-upstream_version: latest
-image: holesail/holesail:latest
+image: holesail/holesail
 architectures: [x86_64, aarch64]
 volumes:
   holesail: /usr/src/app/data
   startos: (StartOS state)
 ports: none
 dependencies: none
-mode: server-only
-connection_string_format: "hs://{0|s}000{42-char-key}"
-env_per_tunnel:
-  MODE: server
-  PORT: (from service interface)
-  HOST: "{packageId}.startos"
-  KEY: (connection string)
-  LOG: "true"
-  NODE_ENV: production
+startos_managed_env_vars:
+  - MODE
+  - PORT
+  - HOST
+  - KEY
+  - LOG
+  - NODE_ENV
 actions:
-  - manage-tunnels (enabled, any)
-  - view-connections (enabled if tunnels exist, any)
-health_checks:
-  - per-tunnel daemon status
-backup_volumes:
-  - holesail
-  - startos
-not_available:
-  - Client mode
-  - CLI access
-  - UDP tunnels
-  - File sharing feature
-  - Custom port configuration
+  - manage-tunnels
+  - view-connections
 ```
